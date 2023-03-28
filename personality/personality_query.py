@@ -40,17 +40,11 @@ for personality in personalities.keys():
         {'$addFields': {'personality': {personalities[personality]: '$' + personalities[personality]}}},
         {'$addFields': {'labels': {'personality': '$personality'}}},
         {'$project': {'author_id': '$_id', 'labels': 1, '_id': 0}},
-        # merge with new collection
-        #{'$merge': {'into': 'labelled_authors_temp', 'on': 'author_id', 'whenMatched': 'merge', 'whenNotMatched': 'insert'}}
+        {'$out': 'labelled_authors_temp'}
     ]
 
-    results = list(db.july2021_all.aggregate(main_db_pipeline, allowDiskUse=True))
+    db.july2021_all.aggregate(main_db_pipeline, allowDiskUse=True)
     
-    #TODO: Change to temp collection
-
-    db.labelled_authors.insert_many(results)
-
-
 group_authors_pipeline = [
     {'$unwind': {'path': '$labels.personality.extrovert', 'preserveNullAndEmptyArrays': True}},
     {'$unwind': {'path': '$labels.personality.introvert', 'preserveNullAndEmptyArrays': True}},
@@ -84,7 +78,7 @@ group_authors_pipeline = [
     {'$out': 'labelled_authors'}
 ]
 
-db.labelled_authors.aggregate(group_authors_pipeline, allowDiskUse=True)
+db.labelled_authors_temp.aggregate(group_authors_pipeline, allowDiskUse=True)
 
     
 
